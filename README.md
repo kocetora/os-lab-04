@@ -53,8 +53,9 @@ fs.writeFileSync('after.txt', beautify(res), 'utf-8')
 
 ## Solution
 
-![Resulting matrix algorithm:](https://github.com/kocetora/os-lab-05/blob/master/assets/md/res.png)
-The resulting matrix filling order
+![Resulting matrix algorithm:](https://github.com/kocetora/os-lab-04/blob/master/assets/md/res.png)
+
+The resulting matrix filling order: in rows the less amount of 1 filling first and the most amount of 1 filling columns.
 
 ### Creating matrixes
 ```js
