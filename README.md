@@ -1,106 +1,162 @@
-# os-lab-02
+# os-lab-04
 
 ## Example
-```cpp
-void test(Allocator* allocator, size_t memorySize, record records[], size_t recordsSize, size_t iterCount)
-{
-	srand((unsigned)time(NULL));
-	size_t maxBlockSize = memorySize / recordsSize * 4;
-	for (size_t i = 0; i < iterCount; i++)
-	{
-		cout << "*******************************************************\n";
-		cout << (i + 1) << " iteration" << "\n";
+```js
+console.log("INPUT MATRIX: \n", a);
+fs.writeFileSync('before.txt', beautify(a), 'utf-8')
+const iter = a.length;
+for(let c = 0; c < iter; c++){
+    let i = theLess(a)
+    a = exchangeR(i, a)
+    let row = deleteRow(a)
+    res = insertRow(row, res)
+    if(a[0]){
+        i = theMost(a)
+        a = exchangeC(i, a)
+        let column = deleteColumn(a)
+        res = insertColumn(column, res);
+    }
+}
+console.log("OUTPUT MATRIX: \n", a);
+console.log("RES MATRIX: \n", res);
+fs.writeFileSync('after.txt', beautify(res), 'utf-8')
+```
 
-		size_t block = (size_t)(rand() % recordsSize);
-		if (records[block].ptr == NULL)
-			//allocate memory
-		{
-			size_t bytes = (size_t)(rand() % maxBlockSize);
-			if (bytes == 0)
-			{
-				bytes++;
-			}
-			cout << "mem_alloc(" << bytes << ") record #" << block << "\n";
-			void* ptr = allocator->mem_alloc(bytes);
-			if (ptr != NULL)
-			{
-				records[block].ptr = ptr;
-				records[block].size = bytes;
-				records[block].checksum = fillBlock((size_t*)ptr, bytes); //save checksum
-			}
-			cout << "ptr = " << ptr << "\n";
-		}
-		else
-		{   //compare checksum with saved value
-			if (records[block].checksum != getChecksum((size_t*)records[block].ptr, records[block].size))
-			{
-				cout << "Checksum of block [" << block << "] is not valid\n";
-				return;
-			}
-			int a = rand() % 2;
-			if (a == 0)
-				//free memory
-			{
-				cout << "mem_free(" << records[block].ptr << ") record #" << block << "\n";
-				allocator->mem_free(records[block].ptr);
-				records[block].ptr = NULL;
-			}
-			else
-				//reallocate memory
-			{
-				size_t oldSize = records[block].size;
-				size_t bytes = (size_t)(rand() % maxBlockSize);
-				cout << "mem_realloc(" << records[block].ptr << ", " << bytes << ") record #" << block << "\n";
-				void* ptr = allocator->mem_realloc(records[block].ptr, bytes);
-				if (ptr != NULL)
-				{
-					records[block].ptr = ptr;
-					if (bytes > oldSize) {
-						size_t gap = bytes - oldSize;
-						size_t* ptr2 = (size_t*)(ptr);
-						for (size_t i = 0; i < oldSize; i += 4) {
-							ptr2++;
-						}
-						fillBlock(ptr2, gap);
-					}
-					records[block].checksum = getChecksum((size_t*)ptr, bytes);
-				}
-				cout << "ptr = " << ptr << "\n";
-			}
-		}
-		if (iterCount <= outputLimit) {
-			allocator->mem_dump();
-			cout << "*******************************************************\n";
-		}
-	}
+### Before
+```
+[[1,0,1,1,1,1,0,1,0,1],
+ [0,1,0,0,1,0,0,0,0,1],
+ [0,0,1,1,1,0,0,0,1,0],
+ [1,1,0,1,1,1,0,0,0,0],
+ [1,0,0,1,1,0,1,1,0,0],
+ [1,1,1,1,0,0,0,0,0,1],
+ [0,1,0,1,0,0,1,1,1,0],
+ [1,1,1,1,0,1,0,0,1,0],
+ [1,0,0,1,1,0,0,0,1,1],
+ [1,0,0,0,1,0,1,0,0,0]]
+```
+
+### After
+```
+[[0,1,0,0,1,0,0,0,0,1],
+ [1,0,1,0,1,0,0,0,1,0],
+ [1,1,0,0,1,0,1,0,0,0],
+ [1,1,1,0,1,1,0,0,0,0],
+ [1,1,1,0,0,0,0,0,0,1],
+ [1,1,1,0,1,0,1,1,0,0],
+ [1,1,1,0,1,1,0,0,1,0],
+ [1,1,1,0,1,1,1,1,0,0],
+ [1,1,1,0,1,1,1,1,0,0],
+ [1,1,1,0,1,1,1,1,1,0]]
+ ```
+
+
+## Solution
+
+![Resulting matrix algorithm:](https://github.com/kocetora/os-lab-05/blob/master/assets/md/res.png)
+The resulting matrix filling order
+
+### Creating matrixes
+```js
+const sizeOfAnArray = 10;
+
+const g = (size = 10) => {
+    let a = [];
+    for(let i = 0; i < size; i++){
+    a[i] = [];
+    for(let j = 0; j < size; j++)
+    a[i][j] = Math.floor((Math.random() * 2));
+    }
+    return a;
+}
+
+let a = g(sizeOfAnArray);
+let res = [];
+for(let i = 0; i < a.length; i++){
+    res[i] = [];
 }
 ```
-![Console output:](https://github.com/kocetora/os-lab-02/blob/master/assets/md/1.png)
 
-## Class Allocator public methods
-- `void* mem_alloc(size_t size)`  
-return address on begin of allocated block or NULL
-- `void* mem_realloc(void* ptr, size_t size)`  
+### Finfing the row with the less amount and the column with the most amount of 1
+```js
+const theLess = (a) => {
+    let less = {
+        amount: a.length+1,
+        index: 0,
+    }
+    for(let i = 0; i < a.length; i++){
+        let sum = 0;
+        for(let j = 0; j < a.length; j++){
+            sum += a[i][j];
+        }
+        if(less.amount > sum){
+            less.index = i;
+            less.amount = sum;
+        }
+    }
+    return less.index;
+}
+```
 
-- `void mem_free(void* ptr)`  
+```js
+const theMost = (a) => {
+    let most = {
+        amount: -1,
+        index: 0,
+    }
+    for(let i = 0; i < a[0].length; i++){
+        let sum = 0;
+        for(let j = 0; j < a.length; j++){
+            sum += a[j][i];
+        }
+        if(most.amount < sum){
+            most.index = i;
+            most.amount = sum;
+        }
+    }
+    return most.index;
+}
+```
 
-- `void mem_dump()`  
+### Deleting columns and rows
+```js
+const deleteRow = (a) => {
+    return a.shift();
+}
+```
 
-### Header structure
-```cpp
-enum pageState { FREE, BUSY, ZONE };
+```js
+const deleteColumn = (a) => {
+    let col = [];
+    for(let i = 0; i < a.length; i++){
+        col.push(a[i].shift());
+    }
+    return col;
+}
+```
 
-struct zoneHeader
-{
-	zoneHeader* nextZone = NULL;
-	void* firstFreeBlock = NULL;
-	size_t ctrFree;
-};
+### Inserting columns and rows
+```js
+const insertRow = (row, res) => {
+    const row_i = (res.length - row.length);
+    const col_i = res[row_i].length;
+    let j = 0;
+    for(let i = row_i; i < res.length; i++){
+        res[row_i][col_i+j] = row[j];
+        j++;
+    }
+    return res;
+}
+```
 
-struct pageHeader
-{
-	pageState state = FREE;
-	size_t sizeOfBlock; // small inner block for zones, number of pages which makes up large block otherwise
-	zoneHeader* zone = NULL;
-};
+```js
+const insertColumn = (column, res) => {
+    const row_i = (res.length - column.length);
+    const col_i = res[row_i].length;
+    let j = 0;
+    for(let i = row_i; i < res.length; i++){
+        res[i][col_i] = column[j];
+    }
+    return res;
+}
 ```
